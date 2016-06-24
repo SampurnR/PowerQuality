@@ -37,6 +37,46 @@ getDataForSpecificEvent <- function(folderPath, eventDate, eventTime, eventType)
 	return(eventData)
 }
 
+getCausesAndEffects <- function(listOfEvents){
+	listOfEvents$Causes <- NA
+	listOfEvents$Effects <- NA
+	listOfEvents$Solutions <- NA
+
+	# setting causes
+	listOfEvents$Causes <- ifelse(listOfEvents$Event %in% c("Voltage Sag"), "Load variations, switching events", listOfEvents$Causes)
+	listOfEvents$Causes <- ifelse(listOfEvents$Event == "Sag became Major Sag", "Power system faults, utility equipment malfunctions, starting large loads and ground faults", listOfEvents$Causes)
+	listOfEvents$Causes <- ifelse(listOfEvents$Event == "Under-frequency", "Nonlinear industrial loads, variable speed drives, welders, large UPS systems, non-linear residential loads", listOfEvents$Causes)
+	listOfEvents$Causes <- ifelse(listOfEvents$Event == "Waveshape Change", "Arcing conditions, rolling mills, large industrial motors with variable loads", listOfEvents$Causes)
+	listOfEvents$Causes <- ifelse(listOfEvents$Event == "Digital 1 High", "Lightning, capacitor switching", listOfEvents$Causes)
+	listOfEvents$Causes <- ifelse(listOfEvents$Event == "High Frequency Impulse", "Lightning, capacitor switching", listOfEvents$Causes)
+	listOfEvents$Causes <- ifelse(listOfEvents$Event == "Voltage Swell", "SLG fault, upstream failure, switching of large load, large capacitor bank", listOfEvents$Causes)
+	listOfEvents$Causes <- ifelse(listOfEvents$Event == "Phase Current Trigger", "Fault in network or by excessively large inrush currents, supply malfunction of customer equipment, and fault at main fuse box tripping supply", listOfEvents$Causes)
+	listOfEvents$Causes <- ifelse(listOfEvents$Event == "Over-frequency", "Lightning, capacitor switching", listOfEvents$Causes)
+
+	# setting effects
+	listOfEvents$Effects <- ifelse(listOfEvents$Event == "Voltage Sag", "Premature ageing, pre-heating and malfunctioning of connected equipment", listOfEvents$Effects)
+	listOfEvents$Effects <- ifelse(listOfEvents$Event == "Sag became Major Sag", "Malfunction of electronic drives, converters, motor stalling, digital clock flashing, and related computer system failure", listOfEvents$Effects)
+	listOfEvents$Effects <- ifelse(listOfEvents$Event == "Under-frequency", "Overheating and fuse blowing of pf correction capacitors, overheating of neutral conductors of supply transformers, tripping of over current protection, mal-operation of relays", listOfEvents$Effects)
+	listOfEvents$Effects <- ifelse(listOfEvents$Event == "Waveshape Change", "Disturbance in TV and other monitoring equipments, light flicker", listOfEvents$Effects)
+	listOfEvents$Effects <- ifelse(listOfEvents$Event == "Digital 1 High", "Reduce life span, insulation breakdown of transformer and motor load", listOfEvents$Effects)
+	listOfEvents$Effects <- ifelse(listOfEvents$Event == "High Frequency Impulse", "Reduce life span, insulation breakdown of transformer and motor load", listOfEvents$Effects)
+	listOfEvents$Effects <- ifelse(listOfEvents$Event == "Voltage Swell", "Insulation breakdown of equipments, tripping out of protective circuitry in some power electronics systems", listOfEvents$Effects)
+	listOfEvents$Effects <- ifelse(listOfEvents$Event == "Phase Current Trigger", "Loss of computer/controller memory, equipment shutdown/failure, hardware damage and product loss", listOfEvents$Effects)
+	listOfEvents$Effects <- ifelse(listOfEvents$Event == "Over-frequency", "Reduce life span, insulation breakdown of transformer and motor load", listOfEvents$Effects)
+
+	# setting solutions
+	listOfEvents$Solutions <- ifelse(listOfEvents$Event == "Voltage Sag", "Line voltage regulators, UPS, motor generator sets", listOfEvents$Solutions)
+	listOfEvents$Solutions <- ifelse(listOfEvents$Event == "Sag became Major Sag", "UPS, constant voltage transformer, energy storage in electronic equipment, new energy-storage technologies ", listOfEvents$Solutions)
+	listOfEvents$Solutions <- ifelse(listOfEvents$Event == "Under-frequency", "Passive and active filters", listOfEvents$Solutions)
+	listOfEvents$Solutions <- ifelse(listOfEvents$Event == "Waveshape Change", "Filters, static VAR systems, distribution static compensators", listOfEvents$Solutions)
+	listOfEvents$Solutions <- ifelse(listOfEvents$Event == "Digital 1 High", "Transient suppressors", listOfEvents$Solutions)
+	listOfEvents$Solutions <- ifelse(listOfEvents$Event == "High Frequency Impulse", "Transient suppressors", listOfEvents$Solutions)
+	listOfEvents$Solutions <- ifelse(listOfEvents$Event == "Voltage Swell", "UPS, power conditioner", listOfEvents$Solutions)
+	listOfEvents$Solutions <- ifelse(listOfEvents$Event == "Phase Current Trigger", "Energy storage in electronic equipment, employing UPS systems, allowing for redundancy, installing generation facilities in the customer’s facility", listOfEvents$Solutions)
+	listOfEvents$Solutions <- ifelse(listOfEvents$Event == "Over-frequency", "Transient suppressors", listOfEvents$Solutions)
+	return(listOfEvents)
+}
+
 # filter data depending on the vaues of the control widgets (from ui) 
 filterEvents <- function(eventsData, location, freqStart, freqEnd, voltStart, voltEnd, durnStart, durnEnd, dateRangeStart, dateRangeEnd){
 	# getting only one location data points
@@ -157,6 +197,8 @@ server <- function(input, output, session){
 	listOfEvents <- read.csv(paste0(dataFolderPath, "EventsList.csv"), header = TRUE, stringsAsFactors = FALSE)
 	# get only eventful data
 	listOfEvents <- subset(listOfEvents, Event %in% events)
+	# get causes, effects, solutions
+	listOfEvents <- getCausesAndEffects(listOfEvents)
 	# modifying data ever so slightly 
 	listOfEvents$Date <- as.Date(as.character(listOfEvents$Date))
 	listOfEvents$Time <- substr(listOfEvents$Time, 3, 18)
@@ -205,6 +247,8 @@ server <- function(input, output, session){
 			plot <- generatePlotForSpecificEvent(plotDF, listOfEvents, input$plotType)
 			p <- ggplotly(plot)
 			p
+		}else{
+			return(NULL)
 		}
 	})
 
@@ -220,7 +264,9 @@ server <- function(input, output, session){
 			cat(paste("Time:", selectedDF$Time, "\n"))
 			cat(paste("Magnitude:", selectedDF$Magnitude, "\n"))
 			cat(paste("Duration:", selectedDF$Duration, "(sec)\n"))
+			cat(paste("Possible Causes:", selectedDF$Causes, "\n"))
+			cat(paste("Possible Effects:", selectedDF$Effects, "\n"))
+			cat(paste("Possible Solutions:", selectedDF$Solutions, "\n"))
 		}
 	})
 }
-
