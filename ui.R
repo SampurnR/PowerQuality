@@ -1,5 +1,5 @@
 library("shinydashboard")
-#library("plotly")
+library("plotly")
 
 dashboardPage(
 	dashboardHeader(
@@ -75,7 +75,7 @@ dashboardPage(
 				solidHeader = TRUE,
 				collapsible =  TRUE,
 				width = 8,
-				plotOutput("eventPlot")
+				plotlyOutput("eventPlot")
 			)
 		)
 	)

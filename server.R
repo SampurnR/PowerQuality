@@ -10,7 +10,7 @@ usePackage <- function(p) {
 usePackage("shinydashboard")
 usePackage("shiny")
 usePackage("ggplot2")
-#usePackage("plotly")
+usePackage("plotly")
 usePackage("DT")
 #usePackage("sqldf")
 usePackage("stats")
@@ -155,7 +155,7 @@ server <- function(input, output, session){
 	events <- c("Voltage Sag", "Sag became Major Sag", "Under-frequency", "Waveshape Change", "Digital 1 High", "High Frequency Impulse", "Voltage Swell", "Phase Current Trigger", "Over-frequency")
 	# load head data
 	listOfEvents <- read.csv(paste0(dataFolderPath, "EventsList.csv"), header = TRUE, stringsAsFactors = FALSE)
-	# get only problematic data
+	# get only eventful data
 	listOfEvents <- subset(listOfEvents, Event %in% events)
 	# modifying data ever so slightly 
 	listOfEvents$Date <- as.Date(as.character(listOfEvents$Date))
@@ -196,14 +196,15 @@ server <- function(input, output, session){
 					)
 
 	# render event plot
-	output$eventPlot <-  renderPlot({
+	output$eventPlot <-  renderPlotly({
 		if(length(input$eventsList_rows_selected)){
 			selectedEvent <- input$eventsList_rows_selected[length(input$eventsList_rows_selected)]
 			selectedDF  <- listOfEvents[selectedEvent, ]
 			plotDF <- getDataForSpecificEvent(folderPath = dataFolderPath, eventDate = selectedDF$Date, eventTime = selectedDF$Time, eventType = selectedDF$Event)
 			plotDF <- setColNames(plotDF)
 			plot <- generatePlotForSpecificEvent(plotDF, listOfEvents, input$plotType)
-			return(plot)
+			p <- ggplotly(plot)
+			p
 		}
 	})
 
