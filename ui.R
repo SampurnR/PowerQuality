@@ -45,10 +45,11 @@ dashboardPage(
 			  selectInput(
 			  	inputId = "plotType",
 			  	label = "Plot Type",
-			  	choices = c("Simple Waveform" = "waveformplot",
-			  				"Fast Fourier Transform" = "fftplot",
+			  	choices = c("Simple Waveform - Voltage" = "voltwaveformplot",
+			  				"Simple Waveform - Current" = "currentwaveformplot",
 			  				"Variations in Power Quality" = "violinplot", 
-			  				"Discrete Wavelet Transformation" = "dwtplot"
+			  				"Fast Fourier Transform" = "fftplot"#,
+			  				#"Discrete Wavelet Transformation" = "dwtplot"
 			  				)
 			  )
 			),

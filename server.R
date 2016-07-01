@@ -30,12 +30,35 @@ getDataForSpecificEvent <- function(folderPath, eventDate, eventTime, eventType)
 		filePath <- paste0(folderPath, eventDate, " (T ", eventTime, ")", eventType, " Waveform_End.csv")
 	}
 	print(filePath)
-	eventData <- read.csv(filePath, header = TRUE, stringsAsFactors = FALSE, skip = 21)
-	if(ncol(eventData) == 1){
-		eventData <- read.csv(filePath, header = TRUE, stringsAsFactors = FALSE, skip = 20, sep = ";", dec = ",")
-	}
+	allDataContent <- readChar(filePath, file.info(filePath)$size)
+	eventDataContent <- paste0('"Milliseconds"', strsplit(allDataContent, '"Milliseconds"')[[1]][2])
+	eventData <- read.csv(textConnection(eventDataContent)) 
 	return(eventData)
 }
+
+setColNames <- function(plotDF){
+
+	if(ncol(plotDF) == 13){
+		colnames(plotDF) <- c("milliseconds", "voltage_ne", "voltage_l1n", "voltage_l2n", "voltage_l3n", "voltage_l1l2", "voltage_l2l3", "voltage_l3l1", "current_l1", "current_l2", "current_l3", "current_n", "none")
+	}else if(ncol(plotDF) == 7){
+		colnames(plotDF) <- c("milliseconds", "voltage_ne", "voltage_l1n", "voltage_l2n", "voltage_l3n", "dig1", "none")
+	}else if(ncol(plotDF) == 9){
+		colnames(plotDF) <- c("milliseconds", "voltage_l1l2", "voltage_l2l3", "voltage_l3l1", "current_l1", "current_l2", "current_l3", "current_e", "none")
+	}else if(ncol(plotDF) == 6){
+		colnames(plotDF) <- c("milliseconds", "voltage_l1l2", "current_l1", "current_l2", "current_e", "none")
+	}else if(ncol(plotDF) == 7){
+		colnames(plotDF) <- c("milliseconds", "voltage_ne", "voltage_l1n", "current_l1", "current_n", "current_e", "none")
+	}else if(ncol(plotDF) == 8){
+		colnames(plotDF) <- c("milliseconds", "voltage_l1l2", "voltage_l2l3", "voltage_l3l1", "current_l1", "current_l2", "current_l3", "current_n")
+	}else if(ncol(plotDF) == 4){
+		colnames(plotDF) <- c("milliseconds", "voltage_ne", "voltage_l1n", "none")
+	}else{
+		stop("Something wrong with the dataset. Are you sure you put in the correct file?")
+	}
+
+	return(plotDF)
+}
+
 
 getCausesAndEffects <- function(listOfEvents){
 	listOfEvents$Causes <- NA
@@ -106,42 +129,58 @@ filterEvents <- function(eventsData, location, freqStart, freqEnd, voltStart, vo
 	return(eventsData)
 }
 
-setColNames <- function(plotDF){
-	if(ncol(plotDF) == 8){
-		colnames(plotDF) <- c("milliseconds", "voltage_ne", "voltage_l1n", "current_l1", "current_l2", "current_l3", "current_n", "current_e")
-	}else if(ncol(plotDF) == 7){
-		colnames(plotDF) <- c("milliseconds", "voltage_ne", "voltage_l1n", "current_l1", "current_l2", "current_l3", "dig1")
-	}else if(ncol(plotDF) == 9){
-		colnames(plotDF) <- c("milliseconds", "voltage_ne", "voltage_l1n", "current_l1", "current_l2", "current_l3", "current_n", "current_e", "none")
-	}else if(ncol(plotDF) == 6){
-		colnames(plotDF) <- c("milliseconds", "voltage_ne", "current_l1", "current_l2", "current_e", "none")
-	}else{
-		colnames(plotDF)[1] <- "milliseconds"
-		colnames(plotDF)[2] <- "voltage_ne"
-	}
-	return(plotDF)
-}
 
 # plots a simple waveform from original dataset
-generateWaveform <- function(plotDF){
-	plot <- ggplot(data = plotDF, aes(x = milliseconds, y = voltage_ne)) +
-			geom_line(colour = "dodgerblue") +
+generateVoltageWaveform <- function(plotDF){
+	if(!("voltage_l1n" %in% names(plotDF))){
+		stop("Something wrong with the dataset. Are you sure you put in the correct file?")
+	}
+
+	plot <- ggplot(data = plotDF, aes(x = milliseconds)) +
+			geom_line(aes(y = voltage_l1n), colour = "dodgerblue") +
 			ggtitle("Simple Waveform") +
 			xlab("Time (ms)") + 
 			ylab("Voltage") +
 			theme_bw()
+
+	if("voltage_l2n" %in% names(plotDF)){
+		plot <- plot + geom_line(data = plotDF, aes(y = voltage_l2n), colour = "firebrick2")
+	}
+	if("voltage_l3n" %in% names(plotDF)){
+		plot <- plot + geom_line(data = plotDF, aes(y = voltage_l3n), colour = "springgreen4")	
+	}
+	return(plot)
+}
+
+generateCurrentWaveform <- function(plotDF){
+	if(!("current_l1" %in% names(plotDF))){
+		stop("Something wrong with the dataset. Are you sure you put in the correct file?")
+	}
+
+	plot <- ggplot(data = plotDF, aes(x = milliseconds)) +
+			geom_line(aes(y = current_l1), colour = "dodgerblue") +
+			ggtitle("Simple Waveform") +
+			xlab("Time (ms)") + 
+			ylab("Current") +
+			theme_bw()
+	if("current_l2" %in% names(plotDF)){
+		plot <- plot + geom_line(data = plotDF, aes(y = current_l2), colour = "firebrick2")
+	}
+	if("current_l3" %in% names(plotDF)){
+		plot <- plot + geom_line(data = plotDF, aes(y = current_l3), colour = "springgreen4")	
+	}
 	return(plot)
 }
 
 # plots the fast fourier transform voltage vs frequency in hertz
 generateFFTPlot <- function(plotDF){
 	plotDF$freq <- 1000/plotDF$milliseconds
-	plotDF$fft_val <- Re(fft(plotDF$voltage_ne))
+	plotDF$fft_val <- Mod(fft(plotDF$voltage_l1n))/nrow(plotDF)
 
-	plot <- ggplot(data = plotDF, aes(x = freq, y = fft_val)) +
+	plot <- ggplot(data = plotDF, aes(x = milliseconds, y = fft_val)) +
 			geom_line(colour = "gray50") + 
 			ggtitle("Fast Fourier Transform") +
-			xlab("Frequency (Hz)") + 
+			xlab("Time (ms)") + 
 			ylab("FFT") +
 			theme_bw()
 	#plot <- ggplotly(plot)
@@ -177,8 +216,10 @@ generateDWTPlot <- function(plotDF){
 generatePlotForSpecificEvent <- function(plotDF, listOfEvents, plotType){
 	if(plotType == "fftplot"){
 		plot <- generateFFTPlot(plotDF)
-	}else if(plotType == "waveformplot"){
-		plot <- generateWaveform(plotDF)
+	}else if(plotType == "voltwaveformplot"){
+		plot <- generateVoltageWaveform(plotDF)
+	}else if(plotType == "currentwaveformplot"){
+		plot <- generateCurrentWaveform(plotDF)
 	}else if(plotType == "violinplot"){
 		plot <- generateViolinPlot(listOfEvents)
 	}else if(plotType == "dwtplot"){
@@ -244,6 +285,7 @@ server <- function(input, output, session){
 			selectedDF  <- listOfEvents[selectedEvent, ]
 			plotDF <- getDataForSpecificEvent(folderPath = dataFolderPath, eventDate = selectedDF$Date, eventTime = selectedDF$Time, eventType = selectedDF$Event)
 			plotDF <- setColNames(plotDF)
+			pdf(NULL)
 			plot <- generatePlotForSpecificEvent(plotDF, listOfEvents, input$plotType)
 			p <- ggplotly(plot)
 			p
