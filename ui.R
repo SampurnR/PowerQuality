@@ -20,7 +20,7 @@ dashboardPage(
 			  sliderInput(
 			  	inputId = "freq", 
 			  	label = "Frequency (Hz)",
-			  	value = c(50, 550), 
+			  	value = c(0, 3000), 
 			  	min = 0,
 			  	max = 3000,
 			  	step = 10
@@ -28,7 +28,7 @@ dashboardPage(
 			  sliderInput(
 			  	inputId = "volt", 
 			  	label = "Voltage (V)", 
-			  	value = c(60, 90),
+			  	value = c(0, 100),
 			  	min = 0,
 			  	max = 100,
 			  	step = 1
@@ -36,10 +36,10 @@ dashboardPage(
 			  sliderInput(
 			  	inputId = "durn", 
 			  	label = "Duration (sec)", 
-			  	value = c(0, 100000),
+			  	value = c(0, 1000000),
 			  	min = 0,
 			  	max = 1000000,
-			  	step = 1
+			  	step = 10
 			  ),
 			  uiOutput("dateRangeCtrl"),
 			  selectInput(
@@ -47,8 +47,9 @@ dashboardPage(
 			  	label = "Plot Type",
 			  	choices = c("Simple Waveform - Voltage" = "voltwaveformplot",
 			  				"Simple Waveform - Current" = "currentwaveformplot",
-			  				"Variations in Power Quality" = "violinplot", 
-			  				"Fast Fourier Transform" = "fftplot"#,
+			  				"Fast Fourier Transform - Time" = "timefftplot",
+			  				"Fast Fourier Transform - Frequency" = "freqfftplot",
+			  				"Variations in Power Quality" = "violinplot"#, 
 			  				#"Discrete Wavelet Transformation" = "dwtplot"
 			  				)
 			  )

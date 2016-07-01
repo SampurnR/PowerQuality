@@ -172,18 +172,31 @@ generateCurrentWaveform <- function(plotDF){
 	return(plot)
 }
 
-# plots the fast fourier transform voltage vs frequency in hertz
-generateFFTPlot <- function(plotDF){
+# plots the fast fourier transform voltage vs time in ms
+generateTimeFFTPlot <- function(plotDF){
 	plotDF$freq <- 1000/plotDF$milliseconds
 	plotDF$fft_val <- Mod(fft(plotDF$voltage_l1n))/nrow(plotDF)
 
 	plot <- ggplot(data = plotDF, aes(x = milliseconds, y = fft_val)) +
 			geom_line(colour = "gray50") + 
-			ggtitle("Fast Fourier Transform") +
+			ggtitle("Fast Fourier Transform - Time") +
 			xlab("Time (ms)") + 
 			ylab("FFT") +
 			theme_bw()
-	#plot <- ggplotly(plot)
+	return(plot)
+}
+
+# plots the fast fourier transform voltage vs frequency in hertz
+generateFreqFFTPlot <- function(plotDF){
+	plotDF$freq <- 1000/plotDF$milliseconds
+	plotDF$fft_val <- Mod(fft(plotDF$voltage_l1n))/nrow(plotDF)
+
+	plot <- ggplot(data = plotDF, aes(x = freq, y = fft_val)) +
+			geom_line(colour = "gray50") + 
+			ggtitle("Fast Fourier Transform - Frequency") +
+			xlab("Freq (Hz)") + 
+			ylab("FFT") +
+			theme_bw()
 	return(plot)
 }
 
@@ -214,8 +227,10 @@ generateDWTPlot <- function(plotDF){
 
 # generic function to create plot
 generatePlotForSpecificEvent <- function(plotDF, listOfEvents, plotType){
-	if(plotType == "fftplot"){
-		plot <- generateFFTPlot(plotDF)
+	if(plotType == "timefftplot"){
+		plot <- generateTimeFFTPlot(plotDF)
+	}else if(plotType == "freqfftplot"){
+		plot <- generateFreqFFTPlot(plotDF)
 	}else if(plotType == "voltwaveformplot"){
 		plot <- generateVoltageWaveform(plotDF)
 	}else if(plotType == "currentwaveformplot"){
